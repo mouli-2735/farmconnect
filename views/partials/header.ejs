@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="<%= lang === 'mr' ? 'mr' : 'en' %>">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= typeof title !== 'undefined' ? title : 'FarmConnect' %></title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            leaf: { 50: '#eef2e6', 100: '#e4ecdd', 200: '#c7d9b8', 400: '#3d7a4e', 500: '#205c34', 600: '#1a4d2b', 700: '#123c22' },
+            wheat: { 50: '#fbead0', 100: '#f6dcac', 500: '#e2972f', 600: '#b9711a' },
+            soil: { 50: '#f1e6d8', 100: '#e6d4bd', 500: '#6b4a2b', 600: '#523822' },
+            paper: { 50: '#fbfaf3', 100: '#f2f2e6' },
+          },
+          fontFamily: {
+            sans: ['Inter', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+            display: ['"Zilla Slab"', 'Georgia', 'serif']
+          }
+        }
+      }
+    }
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Zilla+Slab:wght@500;600;700&family=Noto+Sans+Devanagari:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/style.css">
+  <style>
+    body { font-family: 'Inter', 'Noto Sans Devanagari', sans-serif; }
+  </style>
+</head>
+<body class="text-[color:var(--ink)] min-h-screen flex flex-col">
+
+  <header class="bg-leaf-600 text-white sticky top-0 z-10 border-b-2 border-leaf-700">
+    <div class="max-w-6xl mx-auto px-5 py-3 flex items-center justify-between flex-wrap gap-2">
+      <a href="/" class="font-display text-xl font-bold tracking-tight flex items-center gap-2.5">
+        <svg width="30" height="30" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <circle cx="16" cy="16" r="15" fill="#e2972f" stroke="#123c22" stroke-width="1.5"/>
+          <path d="M16 24V11" stroke="#123c22" stroke-width="1.6" stroke-linecap="round"/>
+          <path d="M16 12c-1-3-3.5-4.5-6.5-4.7 0 3.2 1.7 5.9 6.5 6.7Z" fill="#205c34"/>
+          <path d="M16 15c1.2-3.4 4-5 7.2-5.1-.1 3.4-2 6.2-7.2 6.9Z" fill="#3d7a4e"/>
+          <path d="M11 24h10" stroke="#123c22" stroke-width="1.6" stroke-linecap="round"/>
+        </svg>
+        FarmConnect
+      </a>
+      <nav class="flex items-center gap-1 text-sm font-medium flex-wrap">
+        <% if (!user) { %>
+          <!-- BEFORE LOGIN (GUEST): ONLY Home & Instruction Manual -->
+          <a href="/" data-active="<%= active === 'home' %>" class="nav-tab px-3.5 py-2 rounded-lg hover:bg-leaf-700 transition font-medium"><%= t('nav_home') %></a>
+          <a href="/manual" data-active="<%= active === 'manual' %>" class="nav-tab px-3.5 py-2 rounded-lg hover:bg-leaf-700 transition font-medium flex items-center gap-1.5 bg-leaf-700/50 border border-leaf-500/80">
+            <svg class="w-4 h-4 text-amber-300" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
+            <span><%= t('nav_manual') %></span>
+          </a>
+        <% } else if (user.role === 'farmer') { %>
+          <!-- FARMER NAV (Listing + produce + incoming orders focus) -->
+          <a href="/" data-active="<%= active === 'home' %>" class="nav-tab px-3 py-2 rounded-lg hover:bg-leaf-700 transition"><%= t('nav_home') %></a>
+          <a href="/add-crop" data-active="<%= active === 'add-crop' %>" class="nav-tab px-3 py-2 rounded-lg hover:bg-leaf-700 transition flex items-center gap-1.5 bg-leaf-700/60 font-semibold border border-leaf-500">
+            <span>+ <%= t('nav_add_crop') %></span>
+            <span class="bg-amber-400 text-stone-900 text-[9px] font-black px-1 rounded uppercase tracking-wider">AI</span>
+          </a>
+          <a href="/orders" data-active="<%= active === 'orders' %>" class="nav-tab px-3 py-2 rounded-lg hover:bg-leaf-700 transition"><%= t('nav_orders') %></a>
+          <a href="/listings" data-active="<%= active === 'listings' %>" class="nav-tab px-3 py-2 rounded-lg hover:bg-leaf-700 transition"><%= t('nav_listings') %></a>
+          <a href="/pool" data-active="<%= active === 'pool' %>" class="nav-tab px-3 py-2 rounded-lg hover:bg-leaf-700 transition"><%= t('nav_pool') %></a>
+          <a href="/prices" data-active="<%= active === 'prices' %>" class="nav-tab px-3 py-2 rounded-lg hover:bg-leaf-700 transition"><%= t('nav_prices') %></a>
+          <a href="/manual" data-active="<%= active === 'manual' %>" class="nav-tab px-3 py-2 rounded-lg hover:bg-leaf-700 transition"><%= t('nav_manual') %></a>
+          <a href="/ussd" data-active="<%= active === 'ussd' %>" class="nav-tab px-3 py-2 rounded-lg hover:bg-leaf-700 transition"><%= t('nav_ussd') %></a>
+        <% } else if (user.role === 'buyer') { %>
+          <!-- BUYER NAV (Sourcing + order tracking focus, no "List a Crop") -->
+          <a href="/" data-active="<%= active === 'home' %>" class="nav-tab px-3 py-2 rounded-lg hover:bg-leaf-700 transition"><%= t('nav_home') %></a>
+          <a href="/listings" data-active="<%= active === 'listings' %>" class="nav-tab px-3 py-2 rounded-lg hover:bg-leaf-700 transition bg-leaf-700/60 font-semibold border border-leaf-500">
+            <%= t('nav_listings') %>
+          </a>
+          <a href="/orders" data-active="<%= active === 'orders' %>" class="nav-tab px-3 py-2 rounded-lg hover:bg-leaf-700 transition"><%= t('nav_orders') %></a>
+          <a href="/prices" data-active="<%= active === 'prices' %>" class="nav-tab px-3 py-2 rounded-lg hover:bg-leaf-700 transition"><%= t('nav_prices') %></a>
+          <a href="/pool" data-active="<%= active === 'pool' %>" class="nav-tab px-3 py-2 rounded-lg hover:bg-leaf-700 transition"><%= t('nav_pool') %></a>
+          <a href="/manual" data-active="<%= active === 'manual' %>" class="nav-tab px-3 py-2 rounded-lg hover:bg-leaf-700 transition"><%= t('nav_manual') %></a>
+          <a href="/ussd" data-active="<%= active === 'ussd' %>" class="nav-tab px-3 py-2 rounded-lg hover:bg-leaf-700 transition"><%= t('nav_ussd') %></a>
+        <% } else if (user.role === 'processor') { %>
+          <!-- PROCESSOR NAV (Bulk aggregation + industrial contracts focus) -->
+          <a href="/" data-active="<%= active === 'home' %>" class="nav-tab px-3 py-2 rounded-lg hover:bg-leaf-700 transition"><%= t('nav_home') %></a>
+          <a href="/pool" data-active="<%= active === 'pool' %>" class="nav-tab px-3 py-2 rounded-lg hover:bg-leaf-700 transition bg-leaf-700/60 font-semibold border border-leaf-500 flex items-center gap-1.5">
+            <span><%= t('nav_pool') %></span>
+            <span class="bg-amber-300 text-stone-900 text-[9px] font-black px-1 rounded uppercase tracking-wider">Bulk</span>
+          </a>
+          <a href="/orders" data-active="<%= active === 'orders' %>" class="nav-tab px-3 py-2 rounded-lg hover:bg-leaf-700 transition"><%= t('nav_orders') %></a>
+          <a href="/listings" data-active="<%= active === 'listings' %>" class="nav-tab px-3 py-2 rounded-lg hover:bg-leaf-700 transition"><%= t('nav_listings') %></a>
+          <a href="/prices" data-active="<%= active === 'prices' %>" class="nav-tab px-3 py-2 rounded-lg hover:bg-leaf-700 transition"><%= t('nav_prices') %></a>
+          <a href="/manual" data-active="<%= active === 'manual' %>" class="nav-tab px-3 py-2 rounded-lg hover:bg-leaf-700 transition"><%= t('nav_manual') %></a>
+          <a href="/ussd" data-active="<%= active === 'ussd' %>" class="nav-tab px-3 py-2 rounded-lg hover:bg-leaf-700 transition"><%= t('nav_ussd') %></a>
+        <% } %>
+
+        <span class="w-px h-5 bg-leaf-400 mx-1"></span>
+
+        <a href="?lang=<%= lang === 'mr' ? 'en' : 'mr' %>" class="px-3 py-1.5 rounded-lg hover:bg-leaf-700 transition text-xs font-bold border border-leaf-400"><%= t('lang_switch') %></a>
+
+        <% if (user) { %>
+          <div class="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold border <%= user.role === 'farmer' ? 'bg-leaf-700/80 border-leaf-500 text-leaf-100' : (user.role === 'buyer' ? 'bg-amber-900/40 border-amber-400/60 text-amber-100' : 'bg-purple-900/50 border-purple-400/60 text-purple-100') %>">
+            <span><%= user.role === 'farmer' ? '🌾' : (user.role === 'buyer' ? '🛒' : '🏭') %></span>
+            <span><%= user.name %></span>
+            <span class="opacity-75 text-[10px] uppercase font-bold">(<%= user.role %>)</span>
+          </div>
+          <form action="/logout" method="POST" class="inline">
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+            <button type="submit" class="px-2.5 py-1.5 rounded-lg hover:bg-leaf-700 transition text-xs font-medium text-leaf-200 hover:text-white"><%= t('nav_logout') %></button>
+          </form>
+        <% } else { %>
+          <a href="/login" class="btn btn-primary !py-1.5 !px-3.5 text-xs"><%= t('nav_login') %></a>
+        <% } %>
+      </nav>
+    </div>
+  </header>
+
+  <main class="flex-1 max-w-6xl w-full mx-auto px-5 py-8">

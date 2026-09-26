@@ -1,0 +1,368 @@
+<%- include('partials/header', { title: 'List Your Crop — FarmConnect', active: 'add-crop' }) %>
+
+  <div class="max-w-xl mx-auto">
+    <div class="flex items-center justify-between gap-3 flex-wrap mb-2">
+      <h1 class="font-display text-3xl font-semibold text-leaf-700"><%= t('add_crop_title') %></h1>
+      <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-leaf-100 text-leaf-800 border border-leaf-300">
+        <svg class="w-3.5 h-3.5 text-leaf-600 animate-pulse" fill="currentColor" viewBox="0 0 20 20"><path d="M11 3a1 1 0 10-2 0v1a1 1 0 01-1 1H7a1 1 0 00-1 1v1a1 1 0 01-1 1H4a1 1 0 00-1 1v2a1 1 0 001 1h1a1 1 0 011 1v1a1 1 0 001 1h1a1 1 0 011 1v1a1 1 0 102 0v-1a1 1 0 011-1h1a1 1 0 001-1v-1a1 1 0 011-1h1a1 1 0 001-1V8a1 1 0 00-1-1h-1a1 1 0 01-1-1V5a1 1 0 00-1-1h-1a1 1 0 01-1-1V3z"/></svg>
+        AI Quality Grading Enabled
+      </span>
+    </div>
+    <p class="text-soil-500/90 mb-5"><%= t('add_crop_subtitle') %></p>
+
+    <div class="mb-5 bg-leaf-50 border border-leaf-200 rounded-xl p-3.5 text-sm text-leaf-700 flex items-center justify-between flex-wrap gap-2">
+      <div>
+        Listing as <strong><%= user.name %></strong> (<%= user.phone %>)
+      </div>
+      <span class="text-xs text-soil-500/70 font-medium">Auto-verified Account</span>
+    </div>
+
+    <!-- AI Produce Quality Scanner Card -->
+    <div class="card p-5 mb-6 border-2 border-leaf-400/50 bg-gradient-to-br from-paper-raised via-leaf-50/20 to-paper-raised shadow-sm">
+      <div class="flex items-start justify-between gap-3">
+        <div>
+          <h2 class="font-display text-lg font-bold text-leaf-800 flex items-center gap-2">
+            <svg class="w-5 h-5 text-leaf-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+            <%= t('ai_scanner_title') %>
+          </h2>
+          <p class="text-xs text-soil-500/90 mt-1 max-w-md">
+            <%= t('ai_scanner_subtitle') %>
+          </p>
+        </div>
+        <span class="text-[10px] font-bold tracking-wider px-2 py-0.5 rounded bg-leaf-200 text-leaf-800 uppercase">
+          Agmark AI
+        </span>
+      </div>
+
+      <div class="mt-4 grid sm:grid-cols-2 gap-4 items-center">
+        <!-- Photo input / dropzone -->
+        <div>
+          <input type="file" id="ai_file_input" accept="image/*" capture="environment" class="hidden">
+          <div id="dropzone" onclick="document.getElementById('ai_file_input').click()"
+            class="border-2 border-dashed border-leaf-300 rounded-xl p-4 text-center cursor-pointer hover:bg-leaf-50/60 transition bg-white/70 relative overflow-hidden min-h-[140px] flex flex-col items-center justify-center">
+            
+            <div id="dropzone_prompt">
+              <svg class="w-8 h-8 text-leaf-500 mx-auto mb-2" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+              <p class="text-xs font-semibold text-leaf-700"><%= t('ai_take_photo') %></p>
+              <p class="text-[11px] text-soil-500/70 mt-0.5"><%= t('ai_drag_drop') %></p>
+            </div>
+
+            <!-- Preview box -->
+            <div id="preview_container" class="hidden w-full h-32 relative">
+              <img id="preview_img" src="" alt="Produce preview" class="w-full h-full object-cover rounded-lg border border-line">
+              <div id="scan_laser" class="hidden absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-red-500 to-transparent shadow-[0_0_8px_#ef4444] animate-bounce"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Scan action & output -->
+        <div class="flex flex-col justify-center space-y-3">
+          <button type="button" id="btn_scan" disabled
+            class="btn btn-field w-full text-xs font-semibold !py-2.5 disabled:opacity-50 disabled:cursor-not-allowed">
+            <span id="scan_btn_text"><%= t('ai_scan_btn') %></span>
+            <span id="scan_spinner" class="hidden animate-spin inline-block w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full ml-1"></span>
+          </button>
+
+          <p id="scan_status" class="text-[11px] text-center text-soil-500/70 italic"></p>
+        </div>
+      </div>
+
+      <!-- AI Inspection Result Panel -->
+      <div id="ai_results_box" class="hidden mt-4 pt-3.5 border-t border-leaf-200/80 bg-white/80 p-3.5 rounded-xl border border-line">
+        <div class="flex items-center justify-between flex-wrap gap-2 mb-2">
+          <div class="flex items-center gap-2">
+            <span class="text-xs font-bold text-leaf-800"><%= t('ai_result_title') %>:</span>
+            <span id="res_badge_grade" class="px-2.5 py-0.5 rounded-full text-xs font-black text-white bg-green-600">
+              Grade A
+            </span>
+            <span id="res_crop_name" class="text-xs font-semibold text-soil-600"></span>
+          </div>
+          <div class="flex items-center gap-1.5 text-xs text-soil-600">
+            <span><%= t('ai_score_label') %>:</span>
+            <strong id="res_score" class="text-leaf-700 font-bold">92%</strong>
+          </div>
+        </div>
+
+        <p id="res_reasoning" class="text-xs text-soil-600/90 leading-relaxed mb-2"></p>
+
+        <div class="grid grid-cols-2 gap-2 text-[11px] bg-paper-50 p-2.5 rounded-lg border border-line mb-3">
+          <div>
+            <span class="text-soil-500"><%= t('ai_shelf_life_label') %>:</span>
+            <strong id="res_shelf_life" class="text-leaf-800 ml-1 font-semibold">5-7 days</strong>
+          </div>
+          <div class="text-right">
+            <span class="text-soil-500">Standard:</span>
+            <strong class="text-leaf-800 ml-1 font-semibold">Agmark / APMC</strong>
+          </div>
+        </div>
+
+        <ul id="res_observations" class="space-y-1 text-xs text-soil-600 mb-3 list-disc list-inside"></ul>
+
+        <button type="button" id="btn_apply_ai" class="btn btn-primary w-full text-xs !py-2">
+          ✓ <%= t('ai_apply_btn') %>
+        </button>
+      </div>
+    </div>
+
+    <!-- Main Add Crop Form -->
+    <form action="/add-crop" method="POST" class="card p-6 space-y-4">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      <input type="hidden" name="image_url" id="image_url" value="">
+
+      <div>
+        <div class="flex items-center justify-between mb-1">
+          <label for="crop_name" class="block text-sm font-semibold text-gray-700"><%= t('label_crop_name') %></label>
+          <span id="ai_verified_tag" class="hidden text-[10px] font-bold text-green-700 bg-green-50 px-2 py-0.5 rounded-full border border-green-200">
+            ✓ <%= t('ai_verified_badge') %>
+          </span>
+        </div>
+        <input type="text" id="crop_name" name="crop_name" placeholder="e.g. Tomato, Wheat, Onion" required
+          class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-leaf-500">
+        <p id="ref-price" class="mt-1.5 text-xs text-gray-500"></p>
+      </div>
+
+      <div class="grid grid-cols-2 gap-4">
+        <div>
+          <label for="quantity" class="block text-sm font-semibold text-gray-700 mb-1"><%= t('label_quantity') %></label>
+          <input type="text" id="quantity" name="quantity" placeholder="e.g. 50 kg" required
+            class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-leaf-500">
+        </div>
+        <div>
+          <label for="price" class="block text-sm font-semibold text-gray-700 mb-1"><%= t('label_price') %></label>
+          <input type="number" step="0.01" id="price" name="price" required
+            class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-leaf-500">
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div>
+          <label for="harvest_date" class="block text-sm font-semibold text-gray-700 mb-1">
+            <%= t('label_harvest_date') %>
+          </label>
+          <input type="date" id="harvest_date" name="harvest_date"
+            class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-leaf-500">
+        </div>
+        <div>
+          <label for="grade" class="block text-sm font-semibold text-gray-700 mb-1">
+            <%= t('label_grade') %>
+          </label>
+          <select id="grade" name="grade"
+            class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-leaf-500 bg-white">
+            <option value="A"><%= t('grade_a') %></option>
+            <option value="B" selected><%= t('grade_b') %></option>
+            <option value="C"><%= t('grade_c') %></option>
+          </select>
+        </div>
+      </div>
+
+      <div>
+        <label for="location" class="block text-sm font-semibold text-gray-700 mb-1"><%= t('label_location') %></label>
+        <input type="text" id="location" name="location" required
+          class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-leaf-500">
+      </div>
+
+      <button type="submit" class="btn btn-field w-full">
+        <%= t('submit_list_crop') %>
+      </button>
+    </form>
+  </div>
+
+  <script>
+    // -------------------------------------------------------------
+    // AI Produce Quality Inspection & Grading Client
+    // -------------------------------------------------------------
+    (function () {
+      const fileInput = document.getElementById('ai_file_input');
+      const dropzone = document.getElementById('dropzone');
+      const dropPrompt = document.getElementById('dropzone_prompt');
+      const prevContainer = document.getElementById('preview_container');
+      const previewImg = document.getElementById('preview_img');
+      const scanLaser = document.getElementById('scan_laser');
+      const btnScan = document.getElementById('btn_scan');
+      const scanBtnText = document.getElementById('scan_btn_text');
+      const scanSpinner = document.getElementById('scan_spinner');
+      const scanStatus = document.getElementById('scan_status');
+
+      const resultsBox = document.getElementById('ai_results_box');
+      const resBadgeGrade = document.getElementById('res_badge_grade');
+      const resCropName = document.getElementById('res_crop_name');
+      const resScore = document.getElementById('res_score');
+      const resReasoning = document.getElementById('res_reasoning');
+      const resShelfLife = document.getElementById('res_shelf_life');
+      const resObservations = document.getElementById('res_observations');
+      const btnApplyAi = document.getElementById('btn_apply_ai');
+
+      const cropNameInput = document.getElementById('crop_name');
+      const gradeSelect = document.getElementById('grade');
+      const imageUrlInput = document.getElementById('image_url');
+      const aiVerifiedTag = document.getElementById('ai_verified_tag');
+
+      let currentImageDataUrl = null;
+      let lastAiResult = null;
+
+      // File selection
+      fileInput.addEventListener('change', function (e) {
+        const file = e.target.files && e.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = function (evt) {
+          currentImageDataUrl = evt.target.result;
+          previewImg.src = currentImageDataUrl;
+          dropPrompt.classList.add('hidden');
+          prevContainer.classList.remove('hidden');
+          btnScan.disabled = false;
+          scanStatus.textContent = 'Photo ready. Click scan to analyze quality.';
+          resultsBox.classList.add('hidden');
+        };
+        reader.readAsDataURL(file);
+      });
+
+      // Drag & drop
+      ['dragenter', 'dragover'].forEach(name => {
+        dropzone.addEventListener(name, (e) => { e.preventDefault(); dropzone.classList.add('bg-leaf-100/50'); });
+      });
+      ['dragleave', 'drop'].forEach(name => {
+        dropzone.addEventListener(name, (e) => { e.preventDefault(); dropzone.classList.remove('bg-leaf-100/50'); });
+      });
+      dropzone.addEventListener('drop', (e) => {
+        if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+          fileInput.files = e.dataTransfer.files;
+          fileInput.dispatchEvent(new Event('change'));
+        }
+      });
+
+      // Trigger AI scan
+      btnScan.addEventListener('click', async function () {
+        if (!currentImageDataUrl) return;
+
+        btnScan.disabled = true;
+        scanBtnText.textContent = <%- JSON.stringify(t('ai_scanning')) %>;
+        scanSpinner.classList.remove('hidden');
+        scanLaser.classList.remove('hidden');
+        scanStatus.textContent = 'AI neural scanner evaluating produce characteristics...';
+
+        try {
+          const res = await fetch('/api/ai-grade', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              _csrf: <%- JSON.stringify(csrfToken) %>,
+              image: currentImageDataUrl,
+              cropName: cropNameInput.value.trim()
+            })
+          });
+
+          const data = await res.json();
+          if (!res.ok || !data.success) {
+            throw new Error(data.error || 'Grading failed');
+          }
+
+          lastAiResult = data.result;
+
+          // Render results
+          resBadgeGrade.textContent = 'Grade ' + lastAiResult.grade;
+          if (lastAiResult.grade === 'A') {
+            resBadgeGrade.className = 'px-2.5 py-0.5 rounded-full text-xs font-black text-white bg-green-600';
+          } else if (lastAiResult.grade === 'B') {
+            resBadgeGrade.className = 'px-2.5 py-0.5 rounded-full text-xs font-black text-white bg-blue-600';
+          } else {
+            resBadgeGrade.className = 'px-2.5 py-0.5 rounded-full text-xs font-black text-white bg-amber-600';
+          }
+
+          resCropName.textContent = '(' + (lastAiResult.cropName || 'Produce') + ')';
+          resScore.textContent = lastAiResult.score + '%';
+          resReasoning.textContent = lastAiResult.reasoning;
+          resShelfLife.textContent = lastAiResult.shelfLifeDays + ' days (ambient)';
+
+          resObservations.innerHTML = '';
+          (lastAiResult.observations || []).forEach(obs => {
+            const li = document.createElement('li');
+            li.textContent = obs;
+            resObservations.appendChild(li);
+          });
+
+          resultsBox.classList.remove('hidden');
+          scanStatus.textContent = 'Inspection complete! Ready to apply to listing.';
+        } catch (err) {
+          console.error(err);
+          scanStatus.textContent = 'Scanning error: ' + err.message;
+        } finally {
+          btnScan.disabled = false;
+          scanBtnText.textContent = <%- JSON.stringify(t('ai_scan_btn')) %>;
+          scanSpinner.classList.add('hidden');
+          scanLaser.classList.add('hidden');
+        }
+      });
+
+      // Apply AI results to form
+      btnApplyAi.addEventListener('click', function () {
+        if (!lastAiResult) return;
+
+        // Auto-fill crop name if currently empty
+        if (!cropNameInput.value.trim() && lastAiResult.cropName) {
+          cropNameInput.value = lastAiResult.cropName;
+          cropNameInput.dispatchEvent(new Event('input'));
+        }
+
+        // Set grade
+        gradeSelect.value = lastAiResult.grade;
+
+        // Attach image url
+        if (lastAiResult.imageUrl) {
+          imageUrlInput.value = lastAiResult.imageUrl;
+        }
+
+        aiVerifiedTag.classList.remove('hidden');
+        btnApplyAi.textContent = '✓ ' + <%- JSON.stringify(t('ai_applied_success')) %>;
+        btnApplyAi.classList.add('opacity-75');
+
+        // Scroll to form fields smoothly
+        cropNameInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      });
+    })();
+
+    // -------------------------------------------------------------
+    // Fair-price check: as the farmer types a crop name, query server
+    // for latest cached mandi price
+    // -------------------------------------------------------------
+    (function () {
+      const input = document.getElementById('crop_name');
+      const priceInput = document.getElementById('price');
+      const out = document.getElementById('ref-price');
+      let timer = null;
+
+      async function checkPrice() {
+        const crop = input.value.trim();
+        if (!crop) { out.textContent = ''; return; }
+        out.textContent = <%- JSON.stringify(t('reference_price_checking')) %>;
+        try {
+          const res = await fetch('/api/reference-price?crop=' + encodeURIComponent(crop));
+          const data = await res.json();
+          if (!data.reference) {
+            out.textContent = <%- JSON.stringify(t('reference_price_none')) %>;
+            return;
+          }
+          const modalPerKg = (data.reference.modal_price / 100).toFixed(2);
+          let msg = 'Mandi ref (' + data.reference.market + '): ~₹' + modalPerKg + '/kg' +
+            ' (₹' + data.reference.modal_price + '/quintal, ' + new Date(data.reference.price_date).toLocaleDateString('en-IN') + ')';
+          const price = parseFloat(priceInput.value);
+          if (price > 0) {
+            const diff = (((price - modalPerKg) / modalPerKg) * 100).toFixed(1);
+            msg += ' — your price is ' + (diff >= 0 ? diff + '% above' : Math.abs(diff) + '% below') + ' this reference.';
+          }
+          out.textContent = msg;
+        } catch (e) {
+          out.textContent = '';
+        }
+      }
+
+      input.addEventListener('input', function () {
+        clearTimeout(timer);
+        timer = setTimeout(checkPrice, 400);
+      });
+      priceInput.addEventListener('input', checkPrice);
+    })();
+  </script>
+
+<%- include('partials/footer') %>

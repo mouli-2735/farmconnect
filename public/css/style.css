@@ -1,0 +1,144 @@
+/* ============================================================
+   FarmConnect visual system — "field ledger"
+   Deep monsoon greens, turmeric marigold, soil brown, on a
+   pale husk paper background. Slab-serif headings (stamped
+   signage feel) + Inter body. Hand-drawn SVG motifs instead of
+   photography — lighter to load on basic-phone connections,
+   and keeps every farmer/buyer illustration in one consistent
+   line style rather than mismatched stock photos.
+   ============================================================ */
+
+:root {
+  --paper: #f2f2e6;
+  --paper-raised: #fbfaf3;
+  --ink: #1c2a1e;
+  --field: #205c34;
+  --field-dark: #123c22;
+  --field-tint: #e4ecdd;
+  --soil: #6b4a2b;
+  --soil-tint: #f1e6d8;
+  --marigold: #e2972f;
+  --marigold-dark: #b9711a;
+  --marigold-tint: #fbead0;
+  --sky: #3f7387;
+  --line: #d9d4bf;
+  --line-strong: #c3bda3;
+}
+
+/* ---- Type ---- */
+.font-display {
+  font-family: 'Zilla Slab', 'Noto Sans Devanagari', serif;
+  letter-spacing: -0.01em;
+}
+
+body {
+  background-color: var(--paper);
+  background-image:
+    repeating-linear-gradient(
+      transparent, transparent 79px, rgba(32, 92, 52, 0.05) 79px, rgba(32, 92, 52, 0.05) 80px
+    );
+  font-variant-numeric: tabular-nums;
+}
+
+/* subtle furrowed-field texture, only behind the hero band */
+.field-rows {
+  background-image: repeating-linear-gradient(
+    100deg,
+    rgba(32, 92, 52, 0.06) 0px,
+    rgba(32, 92, 52, 0.06) 2px,
+    transparent 2px,
+    transparent 26px
+  );
+}
+
+::selection {
+  background: var(--marigold-tint);
+  color: var(--field-dark);
+}
+
+/* ---- Cards: printed-ticket feel, not soft SaaS shadow ---- */
+.card {
+  background: var(--paper-raised);
+  border: 1.5px solid var(--line);
+  border-radius: 14px;
+}
+
+.card-lift {
+  box-shadow: 4px 4px 0 rgba(28, 42, 30, 0.08);
+}
+
+/* ---- Buttons: stamped / tactile, hard offset shadow ---- */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  font-weight: 600;
+  border-radius: 10px;
+  padding: 0.65rem 1.25rem;
+  border: 1.5px solid transparent;
+  transition: transform 0.12s ease, box-shadow 0.12s ease, background-color 0.12s ease;
+  box-shadow: 3px 3px 0 rgba(28, 42, 30, 0.18);
+}
+.btn:active { transform: translate(2px, 2px); box-shadow: 1px 1px 0 rgba(28, 42, 30, 0.18); }
+
+.btn-primary { background: var(--marigold); color: var(--field-dark); border-color: var(--marigold-dark); }
+.btn-primary:hover { background: #eba646; }
+
+.btn-field { background: var(--field); color: #fff; border-color: var(--field-dark); }
+.btn-field:hover { background: #256a3d; }
+
+.btn-outline { background: var(--paper-raised); color: var(--field-dark); border-color: var(--line-strong); box-shadow: none; }
+.btn-outline:hover { background: var(--field-tint); }
+
+/* ---- Stamp badge: circular "verified / direct" mark ---- */
+.stamp {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  border: 1.5px dashed var(--field);
+  color: var(--field-dark);
+  border-radius: 999px;
+  padding: 0.35rem 0.9rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  background: var(--field-tint);
+}
+
+/* ---- Icon tiles used in place of emoji ---- */
+.icon-tile {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 3rem;
+  height: 3rem;
+  border-radius: 12px;
+  flex-shrink: 0;
+}
+
+/* focus visibility, kept crisp for outdoor/low-brightness screens */
+a:focus-visible, button:focus-visible, input:focus-visible, textarea:focus-visible {
+  outline: 2.5px solid var(--marigold-dark);
+  outline-offset: 2px;
+}
+
+/* nav tab underline instead of filled block */
+.nav-tab {
+  position: relative;
+  padding-bottom: 4px;
+}
+.nav-tab[data-active="true"]::after {
+  content: "";
+  position: absolute;
+  left: 0.75rem;
+  right: 0.75rem;
+  bottom: -2px;
+  height: 3px;
+  border-radius: 2px;
+  background: var(--marigold);
+}
+
+table.ledger thead tr { background: var(--field); color: #fff; }
+table.ledger tbody tr:nth-child(even) { background: var(--field-tint); }
+table.ledger tbody tr:hover { background: var(--marigold-tint); }

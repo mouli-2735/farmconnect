@@ -1,0 +1,105 @@
+<%- include('partials/header', { title: 'USSD Simulator — FarmConnect', active: 'ussd' }) %>
+
+  <h1 class="font-display text-3xl font-semibold text-leaf-700"><%= t('ussd_title') %></h1>
+  <p class="text-soil-500/90 mt-1 mb-6 max-w-xl">
+    <%= t('ussd_subtitle') %> This is the same request shape a real telecom USSD
+    aggregator sends: <code class="bg-soil-50 px-1.5 py-0.5 rounded text-xs">POST /ussd/callback</code>
+    with <code class="bg-soil-50 px-1.5 py-0.5 rounded text-xs">sessionId</code>,
+    <code class="bg-soil-50 px-1.5 py-0.5 rounded text-xs">phoneNumber</code> and
+    <code class="bg-soil-50 px-1.5 py-0.5 rounded text-xs">text</code>, replying with
+    <code class="bg-soil-50 px-1.5 py-0.5 rounded text-xs">CON</code> (continue) or
+    <code class="bg-soil-50 px-1.5 py-0.5 rounded text-xs">END</code> (close). Point a real
+    aggregator's callback URL at that same endpoint and this logic runs unchanged.
+  </p>
+
+  <div class="grid md:grid-cols-2 gap-8 items-start">
+    <div>
+      <label class="block text-sm font-semibold text-leaf-700 mb-1">Simulated phone number</label>
+      <input id="phoneNumber" type="text" value="9900011111" class="border border-line-strong rounded-lg px-3 py-2 mb-4 w-48 focus:outline-none focus:ring-2 focus:ring-leaf-500">
+
+      <div class="bg-soil-600 rounded-[1.75rem] p-5 w-72 shadow-xl relative" style="background:#3c2a18;">
+        <div class="flex justify-center mb-3">
+          <div class="w-14 h-1.5 rounded-full bg-black/30"></div>
+        </div>
+        <div id="screen" class="bg-leaf-100 rounded-lg p-4 font-mono text-sm text-leaf-700 h-64 overflow-y-auto whitespace-pre-wrap border-2 border-black/20"></div>
+        <form id="ussdForm" class="mt-3 flex gap-2">
+          <input id="digitInput" type="text" placeholder="Type a digit / value" autocomplete="off"
+            class="flex-1 min-w-0 rounded-lg px-3 py-2 text-sm border-0 focus:outline-none focus:ring-2 focus:ring-wheat-500">
+          <button type="submit" class="btn btn-primary !py-2 !px-3 text-sm">Send</button>
+        </form>
+        <button id="restartBtn" type="button" class="mt-3 text-xs text-wheat-100 hover:underline">↻ Dial *123# again (restart)</button>
+      </div>
+    </div>
+
+    <div class="text-sm text-soil-500/90 space-y-3 max-w-sm">
+      <p><strong class="text-leaf-700">Try it:</strong> send <code class="bg-soil-50 px-1 rounded">1</code> then <code class="bg-soil-50 px-1 rounded">1</code> to check today's tomato price.</p>
+      <p>Send <code class="bg-soil-50 px-1 rounded">2</code> and follow the prompts to list a crop over USSD — it's inserted into the same database the web app uses.</p>
+      <p>Send <code class="bg-soil-50 px-1 rounded">3</code> to see orders tied to the phone number above.</p>
+      <p class="text-xs text-soil-500/60 pt-2 border-t border-line">
+        [ROADMAP] Production deployment needs a licensed USSD/SMS aggregator account (cost and setup not included here) to actually receive dialed sessions from a telecom.
+      </p>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      const screen = document.getElementById('screen');
+      const form = document.getElementById('ussdForm');
+      const input = document.getElementById('digitInput');
+      const phoneField = document.getElementById('phoneNumber');
+      const restartBtn = document.getElementById('restartBtn');
+
+      let sessionId = 'sim-' + Math.random().toString(36).slice(2);
+      let textParts = [];
+      let sessionOver = false;
+
+      function print(line, cls) {
+        const p = document.createElement('div');
+        if (cls) p.className = cls;
+        p.textContent = line;
+        screen.appendChild(p);
+        screen.scrollTop = screen.scrollHeight;
+      }
+
+      async function send() {
+        const text = textParts.join('*');
+        const res = await fetch('/ussd/callback', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: new URLSearchParams({ sessionId, phoneNumber: phoneField.value.trim(), text }),
+        });
+        const body = await res.text();
+        const isEnd = body.startsWith('END');
+        const message = body.replace(/^(CON|END)\s?/, '');
+        print(message, isEnd ? 'text-red-700 font-semibold' : '');
+        sessionOver = isEnd;
+        if (isEnd) print('— session ended —', 'text-xs text-gray-400 mt-1');
+      }
+
+      function restart() {
+        screen.innerHTML = '';
+        sessionId = 'sim-' + Math.random().toString(36).slice(2);
+        textParts = [];
+        sessionOver = false;
+        print('Dialing *123#...', 'text-xs text-gray-400');
+        send();
+      }
+
+      form.addEventListener('submit', function (e) {
+        e.preventDefault();
+        if (sessionOver) { restart(); return; }
+        const val = input.value.trim();
+        if (val === '') return;
+        print('> ' + val, 'text-leaf-700');
+        textParts.push(val);
+        input.value = '';
+        send();
+      });
+
+      restartBtn.addEventListener('click', restart);
+
+      restart();
+    })();
+  </script>
+
+<%- include('partials/footer') %>

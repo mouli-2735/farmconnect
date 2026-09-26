@@ -1,0 +1,516 @@
+<%- include('partials/header', { title: 'FarmConnect — Direct Agriculture Marketplace', active: 'home' }) %>
+
+<% if (dashRole === 'farmer') { %>
+  <!-- ============================================================== -->
+  <!-- FARMER COMMAND CENTER                                          -->
+  <!-- ============================================================== -->
+  <div class="space-y-6">
+    <!-- Header Banner -->
+    <div class="card p-6 bg-gradient-to-r from-leaf-700 via-leaf-600 to-leaf-700 text-white !border-leaf-700 shadow-md">
+      <div class="flex items-center justify-between flex-wrap gap-4">
+        <div>
+          <span class="inline-block bg-white/20 text-white text-xs font-semibold px-2.5 py-0.5 rounded-full mb-2">
+            <%= t('dash_farmer_title') %>
+          </span>
+          <h1 class="font-display text-2xl sm:text-3xl font-bold">
+            <%= t('dash_welcome').replace('%s', user.name) %>
+          </h1>
+          <p class="text-leaf-100 text-sm mt-1 max-w-xl">
+            <%= t('dash_farmer_subtitle') %>
+          </p>
+        </div>
+        <div class="flex items-center gap-2">
+          <a href="/add-crop" class="btn btn-primary !py-2 !px-4 text-xs font-bold">
+            + <%= t('dash_action_list_crop_ai') %>
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <!-- KPI Metric Grid -->
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div class="card p-4 flex flex-col justify-between border-l-4 !border-l-leaf-500">
+        <span class="text-xs font-semibold text-soil-500"><%= t('dash_kpi_active_listings') %></span>
+        <div class="mt-2 flex items-baseline justify-between">
+          <span class="font-display text-2xl font-bold text-leaf-700"><%= stats.activeCount %></span>
+          <a href="/listings" class="text-xs text-leaf-600 hover:underline">View</a>
+        </div>
+      </div>
+
+      <div class="card p-4 flex flex-col justify-between border-l-4 <%= stats.pendingOrders > 0 ? '!border-l-amber-500 bg-amber-50/30' : '!border-l-leaf-500' %>">
+        <span class="text-xs font-semibold text-soil-500"><%= t('dash_kpi_pending_orders') %></span>
+        <div class="mt-2 flex items-baseline justify-between">
+          <span class="font-display text-2xl font-bold <%= stats.pendingOrders > 0 ? 'text-amber-700' : 'text-leaf-700' %>">
+            <%= stats.pendingOrders %>
+          </span>
+          <a href="/orders" class="text-xs text-leaf-600 hover:underline">Process</a>
+        </div>
+      </div>
+
+      <div class="card p-4 flex flex-col justify-between border-l-4 <%= stats.atRiskCount > 0 ? '!border-l-red-500 bg-red-50/30' : '!border-l-leaf-500' %>">
+        <span class="text-xs font-semibold text-soil-500"><%= t('dash_kpi_freshness_alerts') %></span>
+        <div class="mt-2 flex items-baseline justify-between">
+          <span class="font-display text-2xl font-bold <%= stats.atRiskCount > 0 ? 'text-red-700' : 'text-leaf-700' %>">
+            <%= stats.atRiskCount %>
+          </span>
+          <span class="text-[11px] text-soil-500"><%= stats.atRiskCount > 0 ? 'Needs Attention' : 'Optimal' %></span>
+        </div>
+      </div>
+
+      <div class="card p-4 flex flex-col justify-between border-l-4 !border-l-wheat-500">
+        <span class="text-xs font-semibold text-soil-500"><%= t('dash_kpi_reputation') %></span>
+        <div class="mt-2 flex items-baseline justify-between">
+          <span class="font-display text-2xl font-bold text-wheat-600 flex items-center gap-1">
+            ★ <%= rating.avg %>
+          </span>
+          <span class="text-[11px] text-soil-500">(<%= rating.count %> ratings)</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Urgent Alerts Box if any -->
+    <% if (stats.pendingOrders > 0 || stats.atRiskCount > 0 || stats.openIssuesCount > 0) { %>
+      <div class="bg-amber-50/80 border border-amber-300 rounded-xl p-4 text-xs text-amber-900 space-y-1.5">
+        <strong class="font-bold flex items-center gap-1 text-sm text-amber-800">
+          ⚠️ <%= t('dash_urgent_actions') %>
+        </strong>
+        <% if (stats.pendingOrders > 0) { %>
+          <p>• You have <strong><%= stats.pendingOrders %> pending orders</strong> awaiting confirmation under <a href="/orders" class="font-bold underline">Orders</a>.</p>
+        <% } %>
+        <% if (stats.atRiskCount > 0) { %>
+          <p>• <strong><%= stats.atRiskCount %> produce listings</strong> are past 3-day freshness threshold. Consider lowering your price or joining <a href="/pool" class="font-bold underline">Group Selling</a>.</p>
+        <% } %>
+        <% if (stats.openIssuesCount > 0) { %>
+          <p>• You have <strong><%= stats.openIssuesCount %> open buyer grievance(s)</strong> that need resolution on your orders.</p>
+        <% } %>
+      </div>
+    <% } %>
+
+    <!-- Main 2-Column Split: Active Listings & Recent Orders -->
+    <div class="grid lg:grid-cols-2 gap-6">
+      <!-- Active Listings Panel -->
+      <div class="card p-5">
+        <div class="flex items-center justify-between mb-4">
+          <h2 class="font-display text-lg font-bold text-leaf-800">My Active Produce</h2>
+          <a href="/add-crop" class="text-xs font-semibold text-leaf-600 hover:underline">+ New Listing</a>
+        </div>
+
+        <% if (activeCrops.length === 0) { %>
+          <p class="text-xs text-soil-500/80 py-6 text-center">
+            No active crop listings right now. <a href="/add-crop" class="text-leaf-600 font-bold hover:underline">List a crop now</a> with AI quality grading!
+          </p>
+        <% } else { %>
+          <div class="space-y-3">
+            <% activeCrops.slice(0, 4).forEach(function(crop) { %>
+              <div class="p-3 rounded-lg border border-line bg-paper-50 flex items-center justify-between gap-3 text-xs">
+                <div class="flex items-center gap-2.5">
+                  <% if (crop.image_url) { %>
+                    <img src="<%= crop.image_url %>" alt="<%= crop.crop_name %>" class="w-10 h-10 object-cover rounded-md border border-line">
+                  <% } else { %>
+                    <div class="w-10 h-10 rounded-md bg-leaf-100 text-leaf-700 flex items-center justify-center font-bold text-sm">
+                      <%= crop.crop_name.charAt(0) %>
+                    </div>
+                  <% } %>
+                  <div>
+                    <h3 class="font-bold text-[color:var(--ink)] text-sm"><%= crop.crop_name %></h3>
+                    <div class="flex items-center gap-1.5 text-soil-500/80 mt-0.5">
+                      <span><%= crop.quantity %></span> &middot;
+                      <span class="font-semibold text-leaf-700">₹<%= crop.price %>/kg</span> &middot;
+                      <span class="bg-soil-100 text-soil-700 px-1 rounded text-[10px] font-bold">Grade <%= crop.grade %></span>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="text-right">
+                  <% if (crop.spoilageRisk && crop.spoilageRisk.isAtRisk) { %>
+                    <span class="inline-block text-[10px] bg-red-100 text-red-700 px-1.5 py-0.5 rounded font-bold">
+                      Stale (<%= crop.daysSinceHarvest %>d)
+                    </span>
+                  <% } else if (crop.harvest_date) { %>
+                    <span class="text-[10px] text-soil-500">
+                      <%= crop.daysSinceHarvest === 0 ? 'Today' : crop.daysSinceHarvest + 'd ago' %>
+                    </span>
+                  <% } %>
+                </div>
+              </div>
+            <% }); %>
+          </div>
+        <% } %>
+      </div>
+
+      <!-- Recent Orders Panel -->
+      <div class="card p-5">
+        <div class="flex items-center justify-between mb-4">
+          <h2 class="font-display text-lg font-bold text-leaf-800"><%= t('dash_recent_activity') %></h2>
+          <a href="/orders" class="text-xs font-semibold text-leaf-600 hover:underline">All Orders &rarr;</a>
+        </div>
+
+        <% if (recentOrders.length === 0) { %>
+          <p class="text-xs text-soil-500/80 py-6 text-center">
+            <%= t('dash_no_recent_orders') %> Active buyer inquiries will appear here automatically.
+          </p>
+        <% } else { %>
+          <div class="space-y-3">
+            <% recentOrders.forEach(function(o) { %>
+              <div class="p-3 rounded-lg border border-line bg-paper-50 flex items-center justify-between gap-3 text-xs">
+                <div>
+                  <div class="flex items-center gap-1.5">
+                    <span class="font-bold text-[color:var(--ink)]"><%= o.buyer_name %></span>
+                    <span class="text-soil-500">ordered <%= o.crop_name %></span>
+                  </div>
+                  <p class="text-soil-500/80 mt-0.5"><%= o.quantity_kg %> kg &middot; ₹<%= o.price %>/kg</p>
+                </div>
+                <div class="flex items-center gap-2">
+                  <span class="px-2 py-0.5 rounded-full text-[10px] font-bold <%= o.status === 'Pending' ? 'bg-amber-100 text-amber-800' : (o.status === 'Confirmed' ? 'bg-blue-100 text-blue-800' : (o.status === 'Processing' ? 'bg-purple-100 text-purple-800' : 'bg-green-100 text-green-800')) %>">
+                    <%= o.status %>
+                  </span>
+                  <a href="/orders" class="text-[11px] font-semibold text-leaf-600 hover:underline">Manage</a>
+                </div>
+              </div>
+            <% }); %>
+          </div>
+        <% } %>
+      </div>
+    </div>
+
+    <!-- Mandi Reference Rates -->
+    <div class="card p-4 bg-paper-50 flex items-center justify-between flex-wrap gap-3 text-xs">
+      <span class="font-bold text-leaf-800 flex items-center gap-1.5">
+        📊 Mandi Reference Rates:
+      </span>
+      <div class="flex items-center gap-4 flex-wrap">
+        <% mandiPrices.forEach(function(p) { %>
+          <div class="text-soil-600">
+            <strong><%= p.crop_name %>:</strong> ₹<%= (p.modal_price / 100).toFixed(1) %>/kg <span class="text-[10px] text-soil-400">(<%= p.market %>)</span>
+          </div>
+        <% }); %>
+      </div>
+      <a href="/prices" class="text-leaf-600 font-bold hover:underline">Full Dashboard &rarr;</a>
+    </div>
+  </div>
+
+<% } else if (dashRole === 'buyer') { %>
+  <!-- ============================================================== -->
+  <!-- BUYER SOURCING HUB                                             -->
+  <!-- ============================================================== -->
+  <div class="space-y-6">
+    <!-- Header Banner -->
+    <div class="card p-6 bg-gradient-to-r from-wheat-600 via-wheat-500 to-wheat-600 text-white !border-wheat-600 shadow-md">
+      <div class="flex items-center justify-between flex-wrap gap-4">
+        <div>
+          <span class="inline-block bg-white/20 text-white text-xs font-semibold px-2.5 py-0.5 rounded-full mb-2">
+            <%= t('dash_buyer_title') %>
+          </span>
+          <h1 class="font-display text-2xl sm:text-3xl font-bold">
+            <%= t('dash_welcome').replace('%s', user.name) %>
+          </h1>
+          <p class="text-wheat-50 text-sm mt-1 max-w-xl">
+            <%= t('dash_buyer_subtitle') %>
+          </p>
+        </div>
+        <div class="flex items-center gap-2">
+          <a href="/listings" class="btn btn-primary !bg-white !text-leaf-800 !py-2 !px-4 text-xs font-bold shadow-none">
+            <%= t('dash_action_browse_fresh') %>
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <!-- KPI Metric Grid -->
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div class="card p-4 flex flex-col justify-between border-l-4 !border-l-leaf-500">
+        <span class="text-xs font-semibold text-soil-500"><%= t('dash_kpi_total_orders') %></span>
+        <div class="mt-2 flex items-baseline justify-between">
+          <span class="font-display text-2xl font-bold text-leaf-700"><%= stats.totalOrders %></span>
+          <a href="/orders" class="text-xs text-leaf-600 hover:underline">View</a>
+        </div>
+      </div>
+
+      <div class="card p-4 flex flex-col justify-between border-l-4 !border-l-blue-500">
+        <span class="text-xs font-semibold text-soil-500"><%= t('dash_kpi_deliveries') %></span>
+        <div class="mt-2 flex items-baseline justify-between">
+          <span class="font-display text-2xl font-bold text-blue-700"><%= stats.activeDeliveries %></span>
+          <span class="text-[11px] text-soil-500">In Transit</span>
+        </div>
+      </div>
+
+      <div class="card p-4 flex flex-col justify-between border-l-4 !border-l-green-500">
+        <span class="text-xs font-semibold text-soil-500"><%= t('dash_kpi_delivered') %></span>
+        <div class="mt-2 flex items-baseline justify-between">
+          <span class="font-display text-2xl font-bold text-green-700"><%= stats.delivered %></span>
+          <span class="text-[11px] text-soil-500">Completed</span>
+        </div>
+      </div>
+
+      <div class="card p-4 flex flex-col justify-between border-l-4 <%= stats.toRateCount > 0 ? '!border-l-amber-500 bg-amber-50/30' : '!border-l-leaf-500' %>">
+        <span class="text-xs font-semibold text-soil-500"><%= t('dash_kpi_to_rate') %></span>
+        <div class="mt-2 flex items-baseline justify-between">
+          <span class="font-display text-2xl font-bold text-amber-700"><%= stats.toRateCount %></span>
+          <a href="/orders" class="text-xs text-amber-800 font-bold hover:underline">Rate Now</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Fresh Grade A Produce Picks -->
+    <div class="card p-5">
+      <div class="flex items-center justify-between mb-4">
+        <div>
+          <h2 class="font-display text-lg font-bold text-leaf-800"><%= t('dash_fresh_grade_a') %></h2>
+          <p class="text-xs text-soil-500">Inspected export & premium quality crops ready for immediate COD purchase</p>
+        </div>
+        <a href="/listings?grade=A" class="text-xs font-semibold text-leaf-600 hover:underline">Browse All Grade A &rarr;</a>
+      </div>
+
+      <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <% gradeACrops.forEach(function(crop) { %>
+          <div class="p-3.5 rounded-xl border border-line bg-paper-50 flex flex-col justify-between text-xs">
+            <% if (crop.image_url) { %>
+              <div class="h-28 rounded-lg overflow-hidden mb-2 bg-leaf-50">
+                <img src="<%= crop.image_url %>" alt="<%= crop.crop_name %>" class="w-full h-full object-cover">
+              </div>
+            <% } %>
+            <div>
+              <div class="flex items-center justify-between">
+                <h3 class="font-bold text-leaf-800 text-sm"><%= crop.crop_name %></h3>
+                <span class="bg-green-100 text-green-800 text-[10px] font-bold px-1.5 py-0.5 rounded">Grade A</span>
+              </div>
+              <p class="text-soil-500 text-[11px] mt-0.5"><%= crop.location %> &middot; <%= crop.farmer_name %></p>
+              <p class="font-display text-base font-bold text-leaf-700 mt-2">₹<%= crop.price %>/kg</p>
+            </div>
+            <a href="/listings?crop=<%= encodeURIComponent(crop.crop_name) %>" class="btn btn-outline !py-1 text-xs mt-3 w-full text-center">
+              View &amp; Order
+            </a>
+          </div>
+        <% }); %>
+      </div>
+    </div>
+
+    <!-- Recent Buyer Orders -->
+    <div class="card p-5">
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="font-display text-lg font-bold text-leaf-800">My Sourcing Orders</h2>
+        <a href="/orders" class="text-xs font-semibold text-leaf-600 hover:underline">All Orders &rarr;</a>
+      </div>
+
+      <% if (buyerOrders.length === 0) { %>
+        <p class="text-xs text-soil-500/80 py-6 text-center">
+          You haven't placed any orders yet. <a href="/listings" class="text-leaf-600 font-bold hover:underline">Browse crops</a> to connect with farmers.
+        </p>
+      <% } else { %>
+        <div class="space-y-3">
+          <% buyerOrders.forEach(function(o) { %>
+            <div class="p-3 rounded-lg border border-line bg-paper-50 flex items-center justify-between gap-3 text-xs">
+              <div>
+                <h3 class="font-bold text-[color:var(--ink)]"><%= o.crop_name %> from <%= o.farmer_name %></h3>
+                <p class="text-soil-500/80 mt-0.5"><%= o.quantity_kg %> kg &middot; ₹<%= o.price %>/kg &middot; <%= o.location %></p>
+              </div>
+              <div class="flex items-center gap-2">
+                <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold <%= o.status === 'Delivered' ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800' %>">
+                  <%= o.status %>
+                </span>
+                <a href="/orders" class="text-xs font-semibold text-leaf-600 hover:underline">Track</a>
+              </div>
+            </div>
+          <% }); %>
+        </div>
+      <% } %>
+    </div>
+  </div>
+
+<% } else if (dashRole === 'processor') { %>
+  <!-- ============================================================== -->
+  <!-- PROCESSOR BULK AGGREGATION DASHBOARD                           -->
+  <!-- ============================================================== -->
+  <div class="space-y-6">
+    <!-- Header Banner -->
+    <div class="card p-6 bg-gradient-to-r from-leaf-800 via-leaf-700 to-leaf-800 text-white !border-leaf-800 shadow-md">
+      <div class="flex items-center justify-between flex-wrap gap-4">
+        <div>
+          <span class="inline-block bg-white/20 text-white text-xs font-semibold px-2.5 py-0.5 rounded-full mb-2">
+            <%= t('dash_processor_title') %>
+          </span>
+          <h1 class="font-display text-2xl sm:text-3xl font-bold">
+            <%= t('dash_welcome').replace('%s', user.name) %>
+          </h1>
+          <p class="text-leaf-100 text-sm mt-1 max-w-xl">
+            <%= t('dash_processor_subtitle') %>
+          </p>
+        </div>
+        <div class="flex items-center gap-2">
+          <a href="/pool" class="btn btn-primary !py-2 !px-4 text-xs font-bold">
+            <%= t('dash_action_pool') %>
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <!-- KPI Metric Grid -->
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div class="card p-4 flex flex-col justify-between border-l-4 !border-l-leaf-500">
+        <span class="text-xs font-semibold text-soil-500"><%= t('dash_kpi_available_pools') %></span>
+        <div class="mt-2 flex items-baseline justify-between">
+          <span class="font-display text-2xl font-bold text-leaf-700"><%= stats.availablePoolsCount %></span>
+          <a href="/pool" class="text-xs text-leaf-600 hover:underline">Bid</a>
+        </div>
+      </div>
+
+      <div class="card p-4 flex flex-col justify-between border-l-4 !border-l-purple-500">
+        <span class="text-xs font-semibold text-soil-500"><%= t('dash_kpi_processing') %></span>
+        <div class="mt-2 flex items-baseline justify-between">
+          <span class="font-display text-2xl font-bold text-purple-700"><%= stats.inProcessing %></span>
+          <span class="text-[11px] text-soil-500">Batches Active</span>
+        </div>
+      </div>
+
+      <div class="card p-4 flex flex-col justify-between border-l-4 !border-l-wheat-500">
+        <span class="text-xs font-semibold text-soil-500"><%= t('dash_kpi_bulk_offers') %></span>
+        <div class="mt-2 flex items-baseline justify-between">
+          <span class="font-display text-2xl font-bold text-wheat-600"><%= stats.offersPlaced %></span>
+          <span class="text-[11px] text-soil-500">Accepted</span>
+        </div>
+      </div>
+
+      <div class="card p-4 flex flex-col justify-between border-l-4 !border-l-blue-500">
+        <span class="text-xs font-semibold text-soil-500"><%= t('dash_kpi_tonnage_sourced') %></span>
+        <div class="mt-2 flex items-baseline justify-between">
+          <span class="font-display text-2xl font-bold text-blue-700"><%= stats.totalKgSourced.toLocaleString('en-IN') %></span>
+          <span class="text-[11px] text-soil-500">kg Total</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Available Pools Ready for Bulk Offers -->
+    <div class="card p-5">
+      <div class="flex items-center justify-between mb-4">
+        <div>
+          <h2 class="font-display text-lg font-bold text-leaf-800">Ready Pooled Groups (2+ Smallholders)</h2>
+          <p class="text-xs text-soil-500">Aggregated lots ready for bulk supply contracts</p>
+        </div>
+        <a href="/pool" class="text-xs font-semibold text-leaf-600 hover:underline">All Pools &rarr;</a>
+      </div>
+
+      <% if (availablePools.length === 0) { %>
+        <p class="text-xs text-soil-500/80 py-6 text-center">
+          No pooled groups available right now. Pools form when 2+ farmers in the same area list the same crop.
+        </p>
+      <% } else { %>
+        <div class="grid sm:grid-cols-2 gap-4">
+          <% availablePools.slice(0, 4).forEach(function(p) { %>
+            <div class="p-4 rounded-xl border border-line bg-paper-50 flex flex-col justify-between text-xs">
+              <div>
+                <div class="flex items-center justify-between">
+                  <h3 class="font-bold text-base text-leaf-800"><%= p.crop_name %></h3>
+                  <span class="bg-wheat-100 text-wheat-800 px-2 py-0.5 rounded text-[10px] font-bold">
+                    <%= p.farmers.length %> farmers
+                  </span>
+                </div>
+                <p class="text-soil-500 text-[11px] mt-0.5"><%= p.location %></p>
+                <p class="font-display text-2xl font-bold text-leaf-700 mt-2">
+                  <%= p.totalKg.toLocaleString('en-IN') %> kg
+                  <span class="text-xs font-sans font-normal text-soil-500">combined</span>
+                </p>
+              </div>
+
+              <a href="/pool" class="btn btn-field !py-1.5 text-xs mt-4 text-center">
+                Submit Bulk Offer &rarr;
+              </a>
+            </div>
+          <% }); %>
+        </div>
+      <% } %>
+    </div>
+  </div>
+
+<% } else { %>
+  <!-- ============================================================== -->
+  <!-- PUBLIC GUEST LANDING PAGE                                      -->
+  <!-- ============================================================== -->
+  <section class="field-rows -mx-5 px-5 py-12 rounded-2xl border border-leaf-100 bg-leaf-50/40 flex flex-col md:flex-row items-center gap-8">
+    <div class="flex-1">
+      <span class="stamp">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M5 12l4 4L19 6" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Direct &middot; No middlemen &middot; AI Graded
+      </span>
+      <h1 class="font-display mt-4 text-4xl md:text-[2.75rem] leading-[1.08] font-semibold text-leaf-700">
+        <%= t('home_title') %>
+      </h1>
+      <p class="mt-4 text-lg text-soil-500/90 max-w-xl">
+        <%= t('home_subtitle') %>
+      </p>
+      <div class="mt-6 flex flex-wrap gap-3">
+        <a href="/login" class="btn btn-primary">Login to FarmConnect</a>
+        <a href="/manual" class="btn btn-outline flex items-center gap-1.5">
+          <svg class="w-4 h-4 text-leaf-700" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
+          <%= t('nav_manual') %> &rarr;
+        </a>
+      </div>
+    </div>
+
+    <div class="flex-1 max-w-sm w-full">
+      <svg viewBox="0 0 320 220" class="w-full h-auto" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Illustration of a farm field under the sun">
+        <circle cx="256" cy="46" r="26" fill="#e2972f"/>
+        <g stroke="#e2972f" stroke-width="3" stroke-linecap="round">
+          <line x1="256" y1="4" x2="256" y2="-6"/>
+          <line x1="290" y1="18" x2="298" y2="10"/>
+          <line x1="222" y1="18" x2="214" y2="10"/>
+        </g>
+        <rect x="0" y="150" width="320" height="70" fill="#e4ecdd"/>
+        <g fill="none" stroke="#205c34" stroke-width="4" stroke-linecap="round">
+          <path d="M10 150 Q 40 110 70 150"/>
+          <path d="M60 150 Q 90 110 120 150"/>
+          <path d="M110 150 Q 140 110 170 150"/>
+          <path d="M160 150 Q 190 110 220 150"/>
+          <path d="M210 150 Q 240 110 270 150"/>
+          <path d="M260 150 Q 290 110 320 150"/>
+        </g>
+        <g fill="none" stroke="#123c22" stroke-width="4" stroke-linecap="round">
+          <path d="M0 172h320"/>
+          <path d="M0 192h320"/>
+          <path d="M0 212h320"/>
+        </g>
+        <g transform="translate(40,120)">
+          <circle cx="0" cy="0" r="11" fill="#6b4a2b"/>
+          <rect x="-3" y="9" width="6" height="20" rx="3" fill="#6b4a2b"/>
+        </g>
+      </svg>
+    </div>
+  </section>
+
+  <!-- 3 Pillars Section -->
+  <section class="grid md:grid-cols-3 gap-6 mt-10">
+    <div class="card card-lift p-8 flex flex-col items-start border-t-4 !border-t-leaf-500">
+      <div class="icon-tile bg-leaf-50 text-leaf-600">
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 3c-2.5 1.5-4 4-4 7 0 3.9 2.7 6.3 4 8 1.3-1.7 4-4.1 4-8 0-3-1.5-5.5-4-7Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M12 10v9" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+      </div>
+      <h2 class="font-display mt-4 text-xl font-semibold text-leaf-700"><%= t('home_for_farmers') %></h2>
+      <p class="mt-2 text-soil-500/90 flex-1"><%= t('home_for_farmers_desc') %></p>
+      <a href="/login" class="btn btn-field mt-5">
+        Login as Farmer &rarr;
+      </a>
+    </div>
+
+    <div class="card card-lift p-8 flex flex-col items-start border-t-4 !border-t-wheat-500">
+      <div class="icon-tile bg-wheat-50 text-wheat-600">
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M4 8h16l-1.5 11a2 2 0 0 1-2 1.7H7.5a2 2 0 0 1-2-1.7L4 8Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M8 8a4 4 0 0 1 8 0" stroke="currentColor" stroke-width="1.8"/></svg>
+      </div>
+      <h2 class="font-display mt-4 text-xl font-semibold text-leaf-700"><%= t('home_for_buyers') %></h2>
+      <p class="mt-2 text-soil-500/90 flex-1"><%= t('home_for_buyers_desc') %></p>
+      <a href="/login" class="btn btn-primary mt-5">
+        Login as Buyer &rarr;
+      </a>
+    </div>
+
+    <div class="card card-lift p-8 flex flex-col items-start bg-leaf-700 text-white !border-leaf-700 relative overflow-hidden">
+      <div class="icon-tile bg-white/15 text-white">
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="8" cy="9" r="3" stroke="currentColor" stroke-width="1.8"/><circle cx="17" cy="9" r="3" stroke="currentColor" stroke-width="1.8"/><path d="M2.5 19c.6-3 2.8-4.7 5.5-4.7s4.9 1.7 5.5 4.7M10.5 19c.6-3 2.8-4.7 5.5-4.7s4.9 1.7 5.5 4.7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+      </div>
+      <h2 class="font-display mt-4 text-xl font-semibold"><%= t('home_group_selling') %></h2>
+      <p class="mt-2 text-leaf-100 flex-1"><%= t('home_group_selling_desc') %></p>
+      <a href="/login" class="btn btn-primary mt-5">
+        Login as Processor &rarr;
+      </a>
+    </div>
+  </section>
+<% } %>
+
+<%- include('partials/footer') %>

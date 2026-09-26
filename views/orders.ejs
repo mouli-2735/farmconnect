@@ -1,0 +1,163 @@
+<%- include('partials/header', { title: 'Orders — FarmConnect', active: 'orders' }) %>
+
+  <h1 class="font-display text-3xl font-semibold text-leaf-700"><%= t('orders_title') %></h1>
+  <p class="text-soil-500/90 mt-1 mb-6"><%= t('orders_subtitle') %> Showing only your own orders.</p>
+
+  <% if (orders.length === 0) { %>
+    <div class="card p-8 text-center text-soil-500">
+      No orders yet. Place one from the <a href="/listings" class="text-leaf-600 font-semibold hover:underline">Browse Crops</a> page.
+    </div>
+  <% } else { %>
+    <div class="card overflow-hidden">
+      <table class="ledger w-full text-sm">
+        <thead>
+          <tr>
+            <th class="text-left px-4 py-3 font-semibold">Crop</th>
+            <th class="text-left px-4 py-3 font-semibold">Farmer</th>
+            <th class="text-left px-4 py-3 font-semibold">Buyer</th>
+            <th class="text-left px-4 py-3 font-semibold">Qty (kg)</th>
+            <th class="text-left px-4 py-3 font-semibold">Price</th>
+            <th class="text-left px-4 py-3 font-semibold">Status</th>
+            <th class="text-left px-4 py-3 font-semibold">Actions & Notes</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% orders.forEach(function(o) { %>
+            <%
+              const hasOpenIssue = o.issues && o.issues.some(i => i.status === 'Open');
+              const hasResolvedIssue = o.issues && o.issues.length > 0 && !hasOpenIssue;
+              const statusColors = {
+                Pending: 'bg-amber-100 text-amber-700',
+                Confirmed: 'bg-blue-100 text-blue-700',
+                Processing: 'bg-purple-100 text-purple-700',
+                Delivered: 'bg-green-100 text-green-700'
+              };
+            %>
+            <tr class="align-top border-b border-line/60">
+              <td class="px-4 py-3 font-medium text-[color:var(--ink)]">
+                <div><%= o.crop_name %></div>
+                <% if (o.pool_offer_id) { %>
+                  <span class="inline-block mt-0.5 text-[10px] font-semibold px-1.5 py-0.5 rounded bg-wheat-100 text-wheat-600">Pool Order</span>
+                <% } %>
+              </td>
+              <td class="px-4 py-3 text-soil-500/90"><%= o.farmer_name %></td>
+              <td class="px-4 py-3 text-soil-500/90"><%= o.buyer_name %></td>
+              <td class="px-4 py-3 text-soil-500/90"><%= o.quantity_kg %></td>
+              <td class="px-4 py-3 text-[color:var(--ink)]">₹<%= o.price %>/kg</td>
+              <td class="px-4 py-3">
+                <span class="inline-block <%= statusColors[o.status] || 'bg-gray-100 text-gray-700' %> text-xs font-semibold px-2.5 py-1 rounded-full whitespace-nowrap">
+                  <%= o.status %>
+                </span>
+                <% if (hasOpenIssue) { %>
+                  <div class="mt-1">
+                    <span class="inline-block bg-red-100 text-red-700 border border-red-200 text-[10px] font-bold px-2 py-0.5 rounded-full whitespace-nowrap">
+                      ⚠️ <%= t('issue_raised') %>
+                    </span>
+                  </div>
+                <% } else if (hasResolvedIssue) { %>
+                  <div class="mt-1">
+                    <span class="inline-block bg-gray-100 text-gray-600 text-[10px] font-medium px-2 py-0.5 rounded-full whitespace-nowrap">
+                      ✓ <%= t('issue_resolved') %>
+                    </span>
+                  </div>
+                <% } %>
+              </td>
+              <td class="px-4 py-3 space-y-2">
+                <!-- Forward status progression for farmers -->
+                <% if (viewerRole === 'farmer') { %>
+                  <%
+                    const stages = ['Pending', 'Confirmed', 'Processing', 'Delivered'];
+                    const idx = stages.indexOf(o.status);
+                    const nextStage = stages[idx + 1];
+                  %>
+                  <% if (nextStage) { %>
+                    <form action="/orders/<%= o.id %>/status" method="POST" class="inline-flex items-center gap-2">
+                      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                      <input type="hidden" name="status" value="<%= nextStage %>">
+                      <button type="submit" class="btn btn-field !py-1 !px-2.5 text-xs whitespace-nowrap">
+                        Mark <%= nextStage %>
+                      </button>
+                    </form>
+                  <% } else { %>
+                    <span class="text-xs text-soil-500/50">Complete</span>
+                  <% } %>
+                <% } %>
+
+                <!-- Buyer rating prompt once Delivered -->
+                <% if (viewerRole !== 'farmer' && o.status === 'Delivered') { %>
+                  <% if (o.rating) { %>
+                    <div class="bg-amber-50 border border-amber-200 rounded p-1.5 text-xs text-amber-800">
+                      <span class="font-bold">★ <%= o.rating.stars %>/5 <%= t('rated_badge') %></span>
+                      <% if (o.rating.comment) { %>
+                        <p class="text-soil-600 text-[11px] mt-0.5 italic">"<%= o.rating.comment %>"</p>
+                      <% } %>
+                    </div>
+                  <% } else { %>
+                    <form action="/orders/<%= o.id %>/rate" method="POST" class="bg-leaf-50/70 border border-leaf-200/80 rounded p-2 text-xs space-y-1.5">
+                      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                      <div class="font-semibold text-leaf-700 flex items-center justify-between">
+                        <span><%= t('rate_farmer') %></span>
+                        <select name="stars" class="border border-line-strong rounded px-1 py-0.5 text-xs bg-white">
+                          <option value="5">★★★★★ (5)</option>
+                          <option value="4">★★★★☆ (4)</option>
+                          <option value="3">★★★☆☆ (3)</option>
+                          <option value="2">★★☆☆☆ (2)</option>
+                          <option value="1">★☆☆☆☆ (1)</option>
+                        </select>
+                      </div>
+                      <input type="text" name="comment" placeholder="<%= t('rating_comment_placeholder') %>"
+                        class="w-full border border-line-strong rounded px-2 py-1 text-xs bg-white">
+                      <button type="submit" class="btn btn-primary !py-1 !px-2 text-xs w-full">
+                        <%= t('submit_rating') %>
+                      </button>
+                    </form>
+                  <% } %>
+                <% } %>
+
+                <!-- Existing Grievances / Dispute Notes -->
+                <% if (o.issues && o.issues.length > 0) { %>
+                  <div class="space-y-1.5 mt-2">
+                    <% o.issues.forEach(function(iss) { %>
+                      <div class="p-2 rounded text-xs <%= iss.status === 'Open' ? 'bg-red-50/80 border border-red-200 text-red-800' : 'bg-gray-50 border border-gray-200 text-gray-700' %>">
+                        <div class="flex items-center justify-between gap-1 flex-wrap">
+                          <span class="font-semibold text-[11px]">
+                            <%= iss.status === 'Open' ? '⚠️ ' + t('issue_raised') : '✓ ' + t('issue_resolved') %>
+                          </span>
+                          <% if (viewerRole === 'farmer' && iss.status === 'Open') { %>
+                            <form action="/orders/<%= o.id %>/issues/<%= iss.id %>/resolve" method="POST" class="inline">
+                              <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                              <button type="submit" class="btn btn-outline !py-0.5 !px-2 text-[10px] whitespace-nowrap bg-white">
+                                <%= t('btn_resolve_issue') %>
+                              </button>
+                            </form>
+                          <% } %>
+                        </div>
+                        <p class="mt-1 text-[11px]"><%= iss.note %></p>
+                      </div>
+                    <% }); %>
+                  </div>
+                <% } %>
+
+                <!-- Form to raise a new grievance (accessible to both parties) -->
+                <details class="text-xs mt-1">
+                  <summary class="cursor-pointer text-soil-500 hover:text-leaf-600 font-medium py-0.5">
+                    + <%= t('btn_raise_issue') %>
+                  </summary>
+                  <form action="/orders/<%= o.id %>/issues" method="POST" class="mt-1.5 space-y-1.5 p-2 bg-paper-50 rounded border border-line">
+                    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                    <textarea name="note" rows="2" placeholder="<%= t('issue_placeholder') %>" required
+                      class="w-full border border-line-strong rounded p-1.5 text-xs bg-white focus:outline-none focus:ring-1 focus:ring-leaf-500"></textarea>
+                    <button type="submit" class="btn btn-outline !py-1 !px-2.5 text-xs">
+                      <%= t('btn_raise_issue') %>
+                    </button>
+                  </form>
+                </details>
+              </td>
+            </tr>
+          <% }); %>
+        </tbody>
+      </table>
+    </div>
+  <% } %>
+
+<%- include('partials/footer') %>

@@ -1,0 +1,25 @@
+{
+  "name": "farmconnect",
+  "version": "1.0.0",
+  "description": "FarmConnect — simple crop listing, price dashboard, and buyer-farmer connection app for SIH 2026 (PS 26132)",
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js",
+    "dev": "node --watch app.js",
+    "db:init": "node scripts/initDb.js",
+    "fetch-prices": "node scripts/fetchPrices.js",
+    "backtest": "node scripts/backtest.js"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "dotenv": "^17.4.2",
+    "ejs": "^6.0.1",
+    "express": "^5.2.1",
+    "mysql2": "^3.24.2"
+  }
+}

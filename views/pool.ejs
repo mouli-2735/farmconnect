@@ -1,0 +1,111 @@
+<%- include('partials/header', { title: 'Group Selling — FarmConnect', active: 'pool' }) %>
+
+  <h1 class="font-display text-3xl font-semibold text-leaf-700"><%= t('pool_title') %></h1>
+  <p class="text-soil-500/90 mt-1 mb-2 max-w-2xl">
+    Small farmers growing the same crop nearby are combined here into one bulk listing, so larger buyers can find enough quantity in one place.
+  </p>
+  <p class="text-xs text-soil-500/60 mb-6 max-w-2xl">
+    FarmConnect doesn't collect or store anyone's produce &mdash; it only coordinates the listing. Each farmer still delivers their own crop independently.
+  </p>
+
+  <% if (pools.length === 0) { %>
+    <div class="card p-8 text-center text-soil-500">
+      No pooled listings yet. Pools form automatically once 2 or more farmers in the same location list the same crop &mdash;
+      <a href="/add-crop" class="text-leaf-600 font-semibold hover:underline">list a crop</a> to get started.
+    </div>
+  <% } else { %>
+    <div class="grid sm:grid-cols-2 gap-5">
+      <% pools.forEach(function(p) { %>
+        <div class="card card-lift p-5">
+          <div class="flex items-center justify-between">
+            <h3 class="font-display text-lg font-semibold text-leaf-700"><%= p.crop_name %></h3>
+            <span class="bg-wheat-50 text-wheat-600 text-xs font-semibold px-2.5 py-1 rounded-full">
+              <%= p.farmers.length %> farmers pooled
+            </span>
+          </div>
+          <p class="text-sm text-soil-500/80 mt-0.5"><%= p.location %></p>
+
+          <p class="font-display mt-3 text-2xl font-semibold text-leaf-700">
+            <%= p.totalKg.toLocaleString('en-IN') %> kg
+            <span class="font-sans text-sm font-medium text-soil-500">available (combined)</span>
+          </p>
+
+          <% if (p.latestOffer) { %>
+            <div class="mt-3 bg-leaf-50 border border-leaf-200 text-leaf-800 rounded-lg p-2.5 text-xs flex items-center justify-between">
+              <span><strong>Bulk Offer:</strong> ₹<%= p.latestOffer.offer_price_per_kg %>/kg from <%= p.latestOffer.processor_name %></span>
+              <span class="bg-leaf-200 text-leaf-900 px-2 py-0.5 rounded font-semibold text-[10px]"><%= p.latestOffer.status %></span>
+            </div>
+          <% } %>
+
+          <div class="mt-4 border-t border-line pt-3 space-y-3">
+            <% p.farmers.forEach(function(f) { %>
+              <div class="border-b border-line/50 pb-2 last:border-b-0 last:pb-0 text-sm">
+                <div class="flex items-center justify-between">
+                  <div class="flex items-center gap-1.5 flex-wrap">
+                    <span class="font-medium text-[color:var(--ink)]"><%= f.farmer_name %></span>
+                    <% if (f.farmerRating) { %>
+                      <span class="inline-flex items-center text-xs font-semibold px-1.5 py-0.5 rounded bg-amber-50 text-amber-700 border border-amber-200" title="<%= f.farmerRating.count %> ratings">
+                        ★ <%= f.farmerRating.avg %>
+                      </span>
+                    <% } %>
+                    <span class="text-soil-500/80">&middot; <%= f.quantity %> &middot; ₹<%= f.price %>/kg</span>
+                    <span class="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-soil-100 text-soil-700">Grade <%= f.grade %></span>
+                  </div>
+                  <% if (user) { %>
+                    <a href="tel:<%= f.contact %>" class="text-leaf-600 font-semibold hover:underline whitespace-nowrap ml-2">Call</a>
+                  <% } else { %>
+                    <a href="/login?next=/pool" class="text-soil-500/50 font-semibold hover:underline whitespace-nowrap ml-2">Login to call</a>
+                  <% } %>
+                </div>
+
+                <div class="flex items-center gap-2 mt-1 text-xs text-soil-500/80 flex-wrap">
+                  <% if (f.harvest_date) { %>
+                    <span>
+                      <% if (f.daysSinceHarvest === 0) { %>
+                        <%= t('harvested_today') %>
+                      <% } else if (f.daysSinceHarvest === 1) { %>
+                        <%= t('harvested_yesterday') %>
+                      <% } else { %>
+                        <%= t('harvested_days_ago').replace('%d', f.daysSinceHarvest) %>
+                      <% } %>
+                    </span>
+                  <% } %>
+                  <% if (f.spoilageRisk && f.spoilageRisk.isAtRisk) { %>
+                    <span class="text-amber-800 bg-amber-100 px-1.5 py-0.5 rounded text-[10px] font-semibold border border-amber-300">
+                      ⚠️ <%= t('spoilage_warning') %>
+                    </span>
+                  <% } %>
+                </div>
+              </div>
+            <% }); %>
+          </div>
+
+          <% if (user && user.role === 'processor') { %>
+            <div class="mt-4 pt-3 border-t border-line">
+              <form action="/pool/offer" method="POST" class="space-y-2">
+                <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                <input type="hidden" name="crop_name" value="<%= p.crop_name %>">
+                <input type="hidden" name="location" value="<%= p.location %>">
+                <label class="block text-xs font-semibold text-leaf-700">
+                  <%= t('make_pool_offer') %> (<%= p.totalKg %> kg total)
+                </label>
+                <div class="flex gap-2">
+                  <input type="number" step="0.1" name="offer_price_per_kg" placeholder="<%= t('offer_price_per_kg') %>" required
+                    class="flex-1 border border-line-strong rounded-lg px-2.5 py-1.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-leaf-500">
+                  <button type="submit" class="btn btn-field !py-1.5 !px-3 text-xs whitespace-nowrap">
+                    <%= t('btn_submit_offer') %>
+                  </button>
+                </div>
+              </form>
+            </div>
+          <% } else if (!user) { %>
+            <a href="/login?next=/pool" class="text-xs text-soil-500/70 hover:underline block mt-3 text-center">
+              <%= t('login_as_processor_offer') %>
+            </a>
+          <% } %>
+        </div>
+      <% }); %>
+    </div>
+  <% } %>
+
+<%- include('partials/footer') %>
