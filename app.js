@@ -39,6 +39,25 @@ app.use("/", ordersRouter);
 app.use("/", poolRouter);
 app.use("/", ussdRouter);
 
-app.listen(PORT, () => {
-  console.log(`FarmConnect running at http://localhost:${PORT}`);
-});
+// Auto-check and initialize database tables if deploying to a fresh cloud database
+const pool = require("./config/db");
+const initDb = require("./scripts/initDb");
+
+async function startServer() {
+  try {
+    const [tables] = await pool.query("SHOW TABLES");
+    if (tables.length === 0) {
+      console.log("==> Empty database detected. Running automatic schema & seed setup...");
+      await initDb(false);
+    }
+  } catch (err) {
+    console.warn("DB readiness check notice:", err.message);
+  }
+
+  app.listen(PORT, () => {
+    console.log(`FarmConnect running at http://localhost:${PORT}`);
+  });
+}
+
+startServer();
+

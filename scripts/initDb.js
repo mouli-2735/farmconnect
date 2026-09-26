@@ -2,7 +2,7 @@ const fs = require("fs");
 const path = require("path");
 const pool = require("../config/db");
 
-async function initDb() {
+async function initDb(shouldExit = false) {
   console.log("==> Initializing FarmConnect Cloud Database...");
 
   const schemaPath = path.join(__dirname, "..", "schema.sql");
@@ -40,11 +40,16 @@ async function initDb() {
     }
   }
 
-  console.log("==> Database initialization complete! All 8 tables and seeds verified.");
-  process.exit(0);
+  console.log("==> Database initialization complete! All tables and seeds verified.");
+  if (shouldExit) process.exit(0);
 }
 
-initDb().catch((err) => {
-  console.error("Database initialization failed:", err);
-  process.exit(1);
-});
+if (require.main === module) {
+  initDb(true).catch((err) => {
+    console.error("Database initialization failed:", err);
+    process.exit(1);
+  });
+}
+
+module.exports = initDb;
+
