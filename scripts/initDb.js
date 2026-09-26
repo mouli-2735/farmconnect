@@ -12,7 +12,12 @@ async function initDb(shouldExit = false) {
   const seedSql = fs.readFileSync(seedPath, "utf8");
 
   function cleanStatements(sql) {
-    return sql
+    // 1. Remove multiline comments /* ... */
+    let cleaned = sql.replace(/\/\*[\s\S]*?\*\//g, "");
+    // 2. Remove single line comments -- ...
+    cleaned = cleaned.replace(/--.*$/gm, "");
+    // 3. Split by semicolon
+    return cleaned
       .split(";")
       .map((s) => s.trim())
       .filter((s) => {
