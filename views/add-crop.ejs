@@ -81,6 +81,13 @@
             <span><%= t('ai_score_label') %>:</span>
             <strong id="res_score" class="text-leaf-700 font-bold">92%</strong>
           </div>
+        <!-- Provider Distinction Banner (Real Gemini vs Offline Fallback) -->
+        <div id="res_provider_banner" class="mb-2.5 p-2 rounded-lg text-[11px] font-semibold flex items-center gap-2 border">
+          <span id="res_provider_icon">🟢</span>
+          <div class="flex-1">
+            <span id="res_provider_title" class="font-bold"></span>
+            <span id="res_provider_note" class="block text-[10px] font-normal text-soil-500"></span>
+          </div>
         </div>
 
         <p id="res_reasoning" class="text-xs text-soil-600/90 leading-relaxed mb-2"></p>
@@ -195,7 +202,10 @@
       const cropNameInput = document.getElementById('crop_name');
       const gradeSelect = document.getElementById('grade');
       const imageUrlInput = document.getElementById('image_url');
-      const aiVerifiedTag = document.getElementById('ai_verified_tag');
+      const resProviderBanner = document.getElementById('res_provider_banner');
+      const resProviderIcon = document.getElementById('res_provider_icon');
+      const resProviderTitle = document.getElementById('res_provider_title');
+      const resProviderNote = document.getElementById('res_provider_note');
 
       let currentImageDataUrl = null;
       let lastAiResult = null;
@@ -260,6 +270,20 @@
 
           lastAiResult = data.result;
 
+          // Render Provider Banner (Google Gemini Vision vs Offline Fallback)
+          const isRealAi = lastAiResult.isRealAi || (lastAiResult.aiProvider && lastAiResult.aiProvider.includes('Gemini'));
+          if (isRealAi) {
+            resProviderBanner.className = 'mb-2.5 p-2 rounded-lg text-[11px] font-semibold flex items-center gap-2 bg-green-50 border border-green-200 text-green-900';
+            resProviderIcon.textContent = '🟢';
+            resProviderTitle.textContent = lastAiResult.aiProvider || 'Google Gemini Vision AI (gemini-3.8-flash)';
+            resProviderNote.textContent = 'Real multimodal visual neural inspection of produce characteristics.';
+          } else {
+            resProviderBanner.className = 'mb-2.5 p-2 rounded-lg text-[11px] font-semibold flex items-center gap-2 bg-amber-50 border border-amber-200 text-amber-900';
+            resProviderIcon.textContent = '⚠️';
+            resProviderTitle.textContent = lastAiResult.aiProvider || 'FarmConnect Agmark Visual Engine (Fallback Mode)';
+            resProviderNote.textContent = 'Gemini API not available. Graded using Agmark offline baseline heuristics.';
+          }
+
           // Render results
           resBadgeGrade.textContent = 'Grade ' + lastAiResult.grade;
           if (lastAiResult.grade === 'A') {
@@ -283,7 +307,7 @@
           });
 
           resultsBox.classList.remove('hidden');
-          scanStatus.textContent = 'Inspection complete! Ready to apply to listing.';
+          scanStatus.textContent = isRealAi ? 'Gemini 3.8 Vision analysis complete!' : 'Offline inspection complete (Fallback mode).';
         } catch (err) {
           console.error(err);
           scanStatus.textContent = 'Scanning error: ' + err.message;
@@ -313,7 +337,16 @@
           imageUrlInput.value = lastAiResult.imageUrl;
         }
 
+        const isRealAi = lastAiResult.isRealAi || (lastAiResult.aiProvider && lastAiResult.aiProvider.includes('Gemini'));
+        if (isRealAi) {
+          aiVerifiedTag.className = 'text-[10px] font-bold text-green-700 bg-green-50 px-2 py-0.5 rounded-full border border-green-200';
+          aiVerifiedTag.textContent = '✓ AI-Verified (Google Gemini)';
+        } else {
+          aiVerifiedTag.className = 'text-[10px] font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200';
+          aiVerifiedTag.textContent = '⚠ Self-Declared / Local Agmark Estimate';
+        }
         aiVerifiedTag.classList.remove('hidden');
+
         btnApplyAi.textContent = '✓ ' + <%- JSON.stringify(t('ai_applied_success')) %>;
         btnApplyAi.classList.add('opacity-75');
 

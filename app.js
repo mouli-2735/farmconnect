@@ -48,10 +48,16 @@ async function startServer() {
     const [tables] = await pool.query("SHOW TABLES");
     if (tables.length === 0) {
       console.log("==> Empty database detected. Running automatic schema & seed setup...");
-      await initDb(false);
     }
   } catch (err) {
     console.warn("DB readiness check notice:", err.message);
+  }
+
+  // Gemini AI Vision Configuration startup check
+  if (!process.env.GEMINI_API_KEY) {
+    console.warn("⚠️  [STARTUP WARNING] GEMINI_API_KEY is not set! AI produce inspection will operate in local Agmark fallback mode.");
+  } else {
+    console.log("✓  [AI Inspector] Gemini Vision AI enabled (models/gemini-3.8-flash)");
   }
 
   app.listen(PORT, () => {
