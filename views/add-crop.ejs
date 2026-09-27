@@ -285,13 +285,15 @@
           }
 
           // Render results
-          resBadgeGrade.textContent = 'Grade ' + lastAiResult.grade;
           if (lastAiResult.grade === 'A') {
+            resBadgeGrade.textContent = 'Grade A (Premium / Export)';
             resBadgeGrade.className = 'px-2.5 py-0.5 rounded-full text-xs font-black text-white bg-green-600';
           } else if (lastAiResult.grade === 'B') {
+            resBadgeGrade.textContent = 'Grade B (Standard Market)';
             resBadgeGrade.className = 'px-2.5 py-0.5 rounded-full text-xs font-black text-white bg-blue-600';
           } else {
-            resBadgeGrade.className = 'px-2.5 py-0.5 rounded-full text-xs font-black text-white bg-amber-600';
+            resBadgeGrade.textContent = 'Grade C (Low Quality / Processing)';
+            resBadgeGrade.className = 'px-2.5 py-0.5 rounded-full text-xs font-black text-white bg-amber-700';
           }
 
           resCropName.textContent = '(' + (lastAiResult.cropName || 'Produce') + ')';
@@ -307,7 +309,7 @@
           });
 
           resultsBox.classList.remove('hidden');
-          scanStatus.textContent = isRealAi ? 'Gemini 3.8 Vision analysis complete!' : 'Offline inspection complete (Fallback mode).';
+          scanStatus.textContent = isRealAi ? ((lastAiResult.aiProvider || 'AI Vision') + ' analysis complete!') : 'Offline inspection complete (Fallback mode).';
         } catch (err) {
           console.error(err);
           scanStatus.textContent = 'Scanning error: ' + err.message;

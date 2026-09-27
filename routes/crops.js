@@ -65,11 +65,9 @@ router.post("/add-crop", requireRole("farmer"), requireCsrf, async (req, res) =>
     }
   }
 
-  // Grade validation: A, B, or C (defaults to 'B')
-  const validGrades = ["A", "B", "C"];
-  const gradeVal = validGrades.includes((grade || "").trim().toUpperCase())
-    ? (grade || "").trim().toUpperCase()
-    : "B";
+  // Grade validation: extract A, B, or C cleanly (defaults to 'B')
+  const gradeMatch = String(grade || "").trim().toUpperCase().match(/\b([ABC])\b/);
+  const gradeVal = gradeMatch ? gradeMatch[1] : "B";
 
   const imageUrlVal = (image_url || "").trim() || null;
 
